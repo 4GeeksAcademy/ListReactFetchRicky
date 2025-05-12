@@ -4,6 +4,8 @@ const username = "RCKCode";
 const API_URL = `https://playground.4geeks.com/todo/users/RICARDO`;
 const API_post = `https://playground.4geeks.com/todo/todos/RICARDO`;
 const API_dlt = `https://playground.4geeks.com/todo/todos`;
+const API_deletuser = `https://playground.4geeks.com/todo/users/RICARDO`;
+const API_create = `https://playground.4geeks.com/todo/users/RICARDO`;
 
 const Home = () => {
   const [tasks, setTasks] = useState([]);
@@ -11,14 +13,14 @@ const Home = () => {
 
 
   const loadTasks = () => {
-    fetch(API_URL)
+    return fetch(API_URL)
       .then((res) => res.json())
       .then((data) => setTasks(data.todos))
       .catch((err) => console.error("Error cargando tareas", err));
   };
   useEffect(() => {
-      loadTasks()
-  },[])
+    loadTasks()
+  }, [])
 
 
   const handleKeyDown = (e) => {
@@ -46,22 +48,24 @@ const Home = () => {
     fetch(`${API_dlt}/${id}`, {
       method: "DELETE",
     })
-      .then((res) => res.json())
-      .then(() => loadTasks())
+      .then(() => {loadTasks()})
       .catch((err) => console.error("Error eliminando tarea", err));
   };
 
   // Eliminar todas las tareas
   const clearAllTasks = () => {
-    fetch(API_dlt, {
+    fetch(API_deletuser, {
       method: "DELETE",
     })
-      .then((res) => res.json())
+      .then(() => fetch(API_create,{method: "POST"}))
       .then(() => loadTasks())
       .catch((err) => console.error("Error limpiando tareas", err));
   }
   
-//usar la url de eliminar usuario y luego volverlo a crear => apis de user
+
+
+  //usar la url de eliminar usuario y luego volverlo a crear => apis de user
+  // 
 
   return (
     <div className="container py-5">
@@ -133,5 +137,6 @@ const Home = () => {
     </div>
   );
 };
+
 
 export default Home;
