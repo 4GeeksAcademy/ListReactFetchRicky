@@ -1,83 +1,67 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 
-const USERNAME = "RCKCode"; 
+const username = "RCKCode";
+const API_URL = `https://playground.4geeks.com/todo/users/RICARDO`;
+const API_post = `https://playground.4geeks.com/todo/todos/RICARDO`;
+const API_dlt = `https://playground.4geeks.com/todo/todos`;
 
 const Home = () => {
   const [tasks, setTasks] = useState([]);
   const [inputValue, setInputValue] = useState("");
 
-  useEffect(() => {
 
-    fetch(`https://playground.4geeks.com/todo/users/${RCKCode}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
-      .then((res) => {
-        if (!res.ok) {
-          console.log("El usuario ya existe o hubo un error.");
-        }
-        return res.json();
-      })
-      .then(() => fetchTasks())
-      .catch((err) => console.error("Error al crear usuario:", err));
-  }, []);
-
-  const fetchTasks = () => {
-    fetch(`https://playground.4geeks.com/todo/todos/${RCKCode}`)
+  const loadTasks = () => {
+    fetch(API_URL)
       .then((res) => res.json())
-      .then((data) => setTasks(data))
-      .catch((err) => console.error("Error al cargar tareas:", err));
+      .then((data) => setTasks(data.todos))
+      .catch((err) => console.error("Error cargando tareas", err));
   };
+  useEffect(() => {
+      loadTasks()
+  },[])
 
-  const handleKeyDown = async (e) => {
+
+  const handleKeyDown = (e) => {
     if (e.key === "Enter" && inputValue.trim() !== "") {
       const newTask = {
         label: inputValue.trim(),
-        is_done: false
+        done: false,
       };
-      try {
-        await fetch(`https://playground.4geeks.com/todo/todos/${RCKCode}`, {
-          method: "POST",
-          body: JSON.stringify(newTask),
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-        setInputValue("");
-        fetchTasks();
-      } catch (err) {
-        console.error("Error al agregar tarea:", err);
-      }
+      fetch(API_post, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newTask),
+      })
+        .then((res) => res.json())
+        .then(() => {
+          setInputValue("");
+          loadTasks(); // Refresca tareas desde el backend
+        })
+        .catch((err) => console.error("Error agregando tarea", err));
     }
   };
 
-  const removeTask = async (id) => {
-    try {
-      await fetch(`https://playground.4geeks.com/todo/todos/${RCKCode}/${id}`, {
-        method: "DELETE"
-      });
-      fetchTasks();
-    } catch (err) {
-      console.error("Error al eliminar tarea:", err);
-    }
+  // Eliminar una tarea específica
+  const removeTask = (id) => {
+    fetch(`${API_dlt}/${id}`, {
+      method: "DELETE",
+    })
+      .then((res) => res.json())
+      .then(() => loadTasks())
+      .catch((err) => console.error("Error eliminando tarea", err));
   };
 
-  const clearAllTasks = async () => {
-    try {
-      await Promise.all(
-        tasks.map((task) =>
-          fetch(`https://playground.4geeks.com/todo/todos/${RCKCode}/${task.id}`, {
-            method: "DELETE"
-          })
-        )
-      );
-      fetchTasks();
-    } catch (err) {
-      console.error("Error al borrar todas las tareas:", err);
-    }
-  };
+  // Eliminar todas las tareas
+  const clearAllTasks = () => {
+    fetch(API_dlt, {
+      method: "DELETE",
+    })
+      .then((res) => res.json())
+      .then(() => loadTasks())
+      .catch((err) => console.error("Error limpiando tareas", err));
+  }
+  
+//usar la url de eliminar usuario y luego volverlo a crear => apis de user
 
   return (
     <div className="container py-5">
@@ -111,6 +95,8 @@ const Home = () => {
                         onClick={() => removeTask(task.id)}
                         role="button"
                         title="Eliminar tarea"
+                        tabIndex={0}
+                        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && removeTask(task.id)}
                       >
                         🗑️
                       </span>
@@ -118,13 +104,17 @@ const Home = () => {
                   ))
                 )}
               </ul>
+
               {tasks.length > 0 && (
                 <>
                   <small className="text-muted mt-2 d-block">
                     {tasks.length} tarea(s) pendiente(s)
                   </small>
-                  <button className="btn btn-danger btn-sm mt-2" onClick={clearAllTasks}>
-                    Borrar todas
+                  <button
+                    className="btn btn-danger btn-sm mt-3"
+                    onClick={clearAllTasks}
+                  >
+                    Limpiar todas las tareas
                   </button>
                 </>
               )}
